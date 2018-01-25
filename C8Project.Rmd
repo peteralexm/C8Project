@@ -1,0 +1,95 @@
+---
+title: "Practical Machine Learning Course Project"
+author: "Petr Minin"
+date: '22 ÿםגאנÿ 2018 ד '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message = FALSE)
+```
+
+## Executive Summary
+The goal of the Practical Machine Learning Course Paper is to predict one of the 5 different ways of performing barbell lifts by 6 different participants by using data from accelerometers on the belt, forearm, arm, and dumbell. 
+The Random Forest Model shows the 100% accuracy both on the training and the test set. It correctly predicts the way of performing barbell lifts in all cases.
+
+## Downloading and Proccesing Data
+###R Code
+```{r}
+library(caret)
+library(randomForest)
+set.seed(123)
+
+#download data
+training <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv")
+control <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+
+#split the training set in two
+inTrain = createDataPartition(training$classe, p = 3/4)[[1]]
+training = training[inTrain,]
+testing = training[-inTrain,]
+
+#deleting variables, that are not taken from acceeleromter
+training=training[,-c(1:7)]
+
+#deleting variables with >50% NA
+na_count <-sapply(training, function(x) sum(is.na(x)))
+na_count <- na_count<0.5*nrow(training)
+training <- training[,na_count]
+
+#deleting variables with>50% empty values
+empty_count <- sapply(training, function(x) sum(x ==""))
+empty_count <- empty_count<0.5*nrow(training)
+training <- training[,empty_count]
+```
+
+###Downloading and Proccessing Data
+The training dataset was downloaded from the url: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The control dataset was downloaded from the url:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The training dataset was split into a training and test dataset in proportion 3:1.
+
+The following preprocessing steps were undertaken with the training dataset:
+1. The variables that were not taken from the accelerometer were deleted;
+2. The variables with more than 50% of NAs were deleted;
+3. The variables with more than 50% of the missing values were deleted.
+
+The final training dataset consists of 14719 observations of 53 variables, one of which is the class variable to be predicted.
+
+##Fitting a Random Forest Model
+###R Code
+```{r}
+#fitting random forest model
+RF_Model <- randomForest(classe~., data=training)
+
+#Insample and out of sample error
+predict_training <- predict(RF_Model, newdata=training)
+predict_testing <- predict(RF_Model, newdata=testing)
+
+#Predicting for the control set
+predict_control <- predict(RF_Model, newdata=control)
+
+```
+
+###Fitting a Random Forest Model
+
+The randomForest library was used to fit a random forest model. The fitted model showes a 100% accuracy both - on the training dataset:
+
+``` {r , echo=FALSE}
+confusionMatrix(training$classe, predict_training)
+```
+
+and on the testing dataset:
+
+``` {r , echo=FALSE}
+confusionMatrix(testing$classe, predict_testing)
+```
+The in-sample error and out-of-sample error is 0.
+
+Finally we use the model to predict the class of performing barbell lifts for the control dataset:
+
+``` {r , echo=FALSE}
+predict_control
+```
